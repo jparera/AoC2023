@@ -11,7 +11,6 @@ public class Day {
             try (var lines = parse(input)) {
                 return 0;
             }
-
         }
     }
 
