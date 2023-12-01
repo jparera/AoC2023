@@ -2,13 +2,11 @@ package net.wrlt.aoc2023.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled
 class BinarySearchTest {
     @Test
-    void searchesIndexOfValueInArrayWithoutDuplicates() {        
+    void searchesIndexOfValueInArrayWithoutDuplicates() {
         var array = new int[] { 1, 2, 3, 4, 5 };
         assertEquals(-1, BinarySearch.indexOf(array, 0));
         assertEquals(0, BinarySearch.indexOf(array, 1));
