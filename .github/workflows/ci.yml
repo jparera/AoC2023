@@ -14,4 +14,4 @@ jobs:
                 java-version: 21
                 cache: gradle
             - name: Gradle test task
-              run: ./gradlew test
+              run: ./gradlew --no-daemon test
