@@ -1,5 +1,5 @@
 plugins {
-   id 'java' 
+	id 'java' 
 }
 
 repositories {
@@ -7,9 +7,9 @@ repositories {
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
 }
 
 testing {
