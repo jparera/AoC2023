@@ -1,21 +1,21 @@
 plugins {
-	id 'java' 
+    id 'java' 
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 testing {
-	suites {
-		test {
-			useJUnitJupiter('5.10.1')
-		}
-	}
+    suites {
+        test {
+            useJUnitJupiter('5.10.1')
+        }
+    }
 }
