@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: CI
 run-name: Testing build by ${{ github.actor }}
 on: [push]
 jobs:
