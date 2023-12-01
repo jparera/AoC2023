@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: CI
 run-name: Testing build by ${{ github.actor }}
 on: [push]
 jobs:
@@ -12,4 +12,6 @@ jobs:
               with:
                 distribution: zulu
                 java-version: 21
-            - run: ./gradlew test
+                cache: gradle
+            - name: Gradle test task
+              run: ./gradlew test
