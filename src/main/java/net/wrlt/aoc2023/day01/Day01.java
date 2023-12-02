@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import net.wrlt.aoc2023.util.Strings.Chars;
+
 public class Day01 {
     public static class Part1 {
         public static int execute(Path input) throws IOException {
@@ -14,27 +16,9 @@ public class Day01 {
         }
 
         private static int valueOf(String line) {
-            int first = firstDigit(line);
-            int last = lastDigit(line);
-            return first * 10 + last;
-        }
-
-        private static int firstDigit(String input) {
-            for (int i = 0; i < input.length(); i++) {
-                if (Character.isDigit(input.charAt(i))) {
-                    return input.charAt(i) - '0';
-                }
-            }
-            return -1;
-        }
-
-        private static int lastDigit(String input) {
-            for (int i = input.length() - 1; i >= 0; i--) {
-                if (Character.isDigit(input.charAt(i))) {
-                    return input.charAt(i) - '0';
-                }
-            }
-            return -1;
+            int first = Chars.first(line, Character::isDigit).orElseThrow();
+            int last = Chars.last(line, Character::isDigit).orElseThrow();
+            return (first - '0') * 10 + (last - '0');
         }
     }
 
@@ -45,7 +29,7 @@ public class Day01 {
 
         public static int execute(Path input) throws IOException {
             try (var lines = parse(input)) {
-                return lines.mapToInt(Part2::valueOf).sum();                
+                return lines.mapToInt(Part2::valueOf).sum();
             }
         }
 
