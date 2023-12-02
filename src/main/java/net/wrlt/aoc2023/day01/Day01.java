@@ -3,22 +3,25 @@ package net.wrlt.aoc2023.day01;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.Stream;
 
-import net.wrlt.aoc2023.util.Strings.Chars;
+import net.wrlt.aoc2023.util.Strings;
 
 public class Day01 {
     public static class Part1 {
         public static int execute(Path input) throws IOException {
             try (var lines = parse(input)) {
-                return lines.mapToInt(Part1::valueOf).sum();
+                return lines.mapToInt(line -> valueOf(line, i -> digit(line, i))).sum();
             }
         }
 
-        private static int valueOf(String line) {
-            int first = Chars.first(line, Character::isDigit).orElseThrow();
-            int last = Chars.last(line, Character::isDigit).orElseThrow();
-            return (first - '0') * 10 + (last - '0');
+        private static int digit(String input, int index) {
+            var c = input.charAt(index);
+            if (Character.isDigit(c)) {
+                return c - '0';
+            }
+            return -1;
         }
     }
 
@@ -29,34 +32,8 @@ public class Day01 {
 
         public static int execute(Path input) throws IOException {
             try (var lines = parse(input)) {
-                return lines.mapToInt(Part2::valueOf).sum();
+                return lines.mapToInt(line -> valueOf(line, i -> digit(line, i))).sum();
             }
-        }
-
-        private static int valueOf(String line) {
-            int first = firstDigit(line);
-            int last = lastDigit(line);
-            return first * 10 + last;
-        }
-
-        private static int firstDigit(String input) {
-            for (int i = 0; i < input.length(); i++) {
-                var digit = digit(input, i);
-                if (digit != -1) {
-                    return digit;
-                }
-            }
-            return -1;
-        }
-
-        private static int lastDigit(String input) {
-            for (int i = input.length() - 1; i >= 0; i--) {
-                var digit = digit(input, i);
-                if (digit != -1) {
-                    return digit;
-                }
-            }
-            return -1;
         }
 
         private static int digit(String input, int index) {
@@ -71,6 +48,18 @@ public class Day01 {
             }
             return -1;
         }
+    }
+
+    private static int valueOf(String line, IntUnaryOperator digitMapper) {
+        int first = Strings.fwIndex(line, digitMapper)
+                .filter(digit -> digit > 0)
+                .findFirst()
+                .orElseThrow();
+        int last = Strings.bwIndex(line, digitMapper)
+                .filter(digit -> digit > 0)
+                .findFirst()
+                .orElseThrow();
+        return first * 10 + last;
     }
 
     private static Stream<String> parse(Path input) throws IOException {
