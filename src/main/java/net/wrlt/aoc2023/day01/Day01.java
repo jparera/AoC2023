@@ -12,8 +12,12 @@ public class Day01 {
     public static class Part1 {
         public static int execute(Path input) throws IOException {
             try (var lines = parse(input)) {
-                return lines.mapToInt(line -> valueOf(line, i -> digit(line, i))).sum();
+                return lines.mapToInt(Part1::calibrationValue).sum();
             }
+        }
+
+        private static int calibrationValue(String line) {
+            return valueOf(line, index -> digit(line, index));
         }
 
         private static int digit(String input, int index) {
@@ -32,8 +36,12 @@ public class Day01 {
 
         public static int execute(Path input) throws IOException {
             try (var lines = parse(input)) {
-                return lines.mapToInt(line -> valueOf(line, i -> digit(line, i))).sum();
+                return lines.mapToInt(Part2::calibrationValue).sum();
             }
+        }
+
+        private static int calibrationValue(String line) {
+            return valueOf(line, index -> digit(line, index));
         }
 
         private static int digit(String input, int index) {
