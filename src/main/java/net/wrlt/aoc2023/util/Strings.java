@@ -2,12 +2,12 @@ package net.wrlt.aoc2023.util;
 
 import java.util.OptionalInt;
 import java.util.function.IntPredicate;
-import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
 
 public class Strings {
-    public static IntStream fwIndex(String input, IntUnaryOperator mapper) {
-        return fw(input).map(mapper);
+
+    public static IntStream fwMapIndexed(String input, IntIndexedMapper mapper) {
+        return fw(input).map(index -> mapper.apply(input, index));
     }
 
     public static IntStream fw(String input) {
@@ -16,14 +16,22 @@ public class Strings {
                 .limit(input.length());
     }
 
-    public static IntStream bwIndex(String input, IntUnaryOperator mapper) {
-        return bw(input).map(mapper);
+    public static IntStream bwMapIndexed(String input, IntIndexedMapper mapper) {
+        return bw(input).map(index -> mapper.apply(input, index));
     }
 
     public static IntStream bw(String input) {
         return IntStream
                 .iterate(input.length() - 1, Math::decrementExact)
                 .limit(input.length());
+    }
+
+    /**
+     * Maps <code>str</code> character at <code>index</code> to an integer.
+     */
+    @FunctionalInterface
+    public interface IntIndexedMapper {
+        int apply(String str, int index);
     }
 
     public static class Chars {

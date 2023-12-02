@@ -3,8 +3,6 @@ package net.wrlt.aoc2023.util;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.function.IntUnaryOperator;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -14,16 +12,18 @@ public class StringsTest {
         @Test
         void iterateForwardUppercasing() {
             var input = "abcde";
-            IntUnaryOperator op = i -> Character.toUpperCase(input.charAt(i));
-            var uppercase = Strings.fwIndex(input, op).toArray();
+            var uppercase = Strings
+                    .fwMapIndexed(input, (str, i) -> Character.toUpperCase(str.charAt(i)))
+                    .toArray();
             assertArrayEquals(input.toUpperCase().chars().toArray(), uppercase);
         }
 
         @Test
         void iterateBackwardUppercasing() {
             var input = "abcde";
-            IntUnaryOperator op = i -> Character.toUpperCase(input.charAt(i));
-            var uppercase = Strings.bwIndex(input, op).toArray();
+            var uppercase = Strings
+                    .bwMapIndexed(input, (str, i) -> Character.toUpperCase(str.charAt(i)))
+                    .toArray();
             assertArrayEquals(new StringBuilder(input.toUpperCase()).reverse().chars().toArray(), uppercase);
         }
 
@@ -40,7 +40,7 @@ public class StringsTest {
         void generateBackwardIndexes() {
             var input = "abcde";
             var indices = Strings.bw(input).toArray();
-            for (int i = input.length() - 1, j = 0; i >= 0 ; i--) {
+            for (int i = input.length() - 1, j = 0; i >= 0; i--) {
                 assertEquals(i, indices[j++]);
             }
         }

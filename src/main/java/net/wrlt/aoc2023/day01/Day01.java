@@ -3,10 +3,10 @@ package net.wrlt.aoc2023.day01;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.function.IntUnaryOperator;
 import java.util.stream.Stream;
 
 import net.wrlt.aoc2023.util.Strings;
+import net.wrlt.aoc2023.util.Strings.IntIndexedMapper;
 
 public class Day01 {
     public static class Part1 {
@@ -17,7 +17,7 @@ public class Day01 {
         }
 
         private static int calibrationValue(String line) {
-            return valueOf(line, index -> digit(line, index));
+            return valueOf(line, Part1::digit);
         }
 
         private static int digit(String input, int index) {
@@ -41,7 +41,7 @@ public class Day01 {
         }
 
         private static int calibrationValue(String line) {
-            return valueOf(line, index -> digit(line, index));
+            return valueOf(line, Part2::digit);
         }
 
         private static int digit(String input, int index) {
@@ -58,12 +58,12 @@ public class Day01 {
         }
     }
 
-    private static int valueOf(String line, IntUnaryOperator digitMapper) {
-        int first = Strings.fwIndex(line, digitMapper)
+    private static int valueOf(String line, IntIndexedMapper digitMapper) {
+        int first = Strings.fwMapIndexed(line, digitMapper)
                 .filter(digit -> digit > 0)
                 .findFirst()
                 .orElseThrow();
-        int last = Strings.bwIndex(line, digitMapper)
+        int last = Strings.bwMapIndexed(line, digitMapper)
                 .filter(digit -> digit > 0)
                 .findFirst()
                 .orElseThrow();
