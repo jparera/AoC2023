@@ -13,20 +13,17 @@ public class Day02 {
     public static class Part1 {
         public static int execute(Path input) throws IOException {
             try (var games = parse(input)) {
-                return games.filter(Part1::isPossible).mapToInt(Game::id).sum();
+                return games
+                        .filter(Part1::isPossible)
+                        .mapToInt(Game::id).sum();
             }
         }
 
         private static boolean isPossible(Game game) {
-            int red = 0;
-            int green = 0;
-            int blue = 0;
-            for (var subset : game.subsets()) {
-                red = Math.max(red, subset.red());
-                green = Math.max(green, subset.green());
-                blue = Math.max(blue, subset.blue());
-            }
-            return red <= 12 && green <= 13 && blue <= 14;
+            return game.subsets().stream()
+                    .filter(subset -> subset.red() > 12 || subset.green() > 13 || subset.blue() > 14)
+                    .findAny()
+                    .isEmpty();
         }
     }
 
@@ -57,6 +54,7 @@ public class Day02 {
     }
 
     record Game(int id, List<Subset> subsets) {
+
         public static Game valueOf(String game) {
             var parts = game.split(": ");
             var id = Integer.parseInt(parts[0].split(" ")[1]);
