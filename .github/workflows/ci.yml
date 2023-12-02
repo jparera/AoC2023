@@ -1,6 +1,10 @@
 name: CI
-run-name: Testing build by ${{ github.actor }}
+
 on: [push]
+
+permissions:
+  contents: read
+
 jobs:
     test:
         runs-on: ubuntu-latest
