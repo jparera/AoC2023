@@ -32,17 +32,6 @@ public class Day03 {
 
     private static final char SPACE = '.';
 
-    private static final int[][] OFFSETS = {
-            { -1, 0 }, // TOP
-            { -1, -1 }, // TOP - LEFT
-            { -1, 1 }, // TOP - RIGHT
-            { 0, -1 }, // LEFT
-            { 0, 1 }, // RIGHT
-            { 1, 0 }, // BOTTOM
-            { 1, -1 }, // BOTTOM - LEFT
-            { 1, 1 }, // BOTTOM - RIGHT
-    };
-
     record Symbol(int row, int col, char type) {
 
     }
@@ -71,13 +60,11 @@ public class Day03 {
         return numbers;
     }
 
-    private static Optional<Symbol> adjacentSymbol(char[][] schematic, int row, int start, int end) {
-        for (var offset : OFFSETS) {
-            for (int col = start; col < end; col++) {
-                var srow = row + offset[0];
-                var scol = col + offset[1];
-                if (isSymbol(schematic, srow, scol)) {
-                    return Optional.of(new Symbol(srow, scol, schematic[srow][scol]));
+    private static Optional<Symbol> adjacentSymbol(char[][] schematic, int currentRow, int start, int end) {
+        for (int row = currentRow - 1; row <= currentRow + 1; row++) {
+            for (int col = start - 1; col <= end; col++) {
+                if (isSymbol(schematic, row, col)) {
+                    return Optional.of(new Symbol(row, col, schematic[row][col]));
                 }
             }
         }
