@@ -5,68 +5,32 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
 
 public class Day03 {
     public static class Part1 {
         public static int execute(Path input) throws IOException {
-            var schematic = parse(input);
-            var numbers = new ArrayList<Integer>();
-            int rows = schematic.length;
-            int columns = schematic[0].length;
-            for (int row = 0; row < rows; row++) {
-                for (int col = 0; col < columns; col++) {
-                    var c = schematic[row][col];
-                    if (Character.isDigit(c)) {
-                        var symbols = new HashSet<Symbol>();
-                        var number = number(schematic, row, col, 0, symbols);
-                        if (!symbols.isEmpty()) {
-                            numbers.add(number);
-                        }
-                    }
-                }
-            }
-            return numbers.stream()
-                    .mapToInt(Integer::intValue)
-                    .reduce(0, Math::addExact);
+            var partNumbers = partNumbersBySymbol(input);
+            return partNumbers.values().stream()
+                .flatMap(v -> v.stream())
+                .mapToInt(Integer::intValue)
+                .sum();
         }
     }
 
     public static class Part2 {
+        private static final char GEAR = '*';
+
         public static int execute(Path input) throws IOException {
-            var schematic = parse(input);
-            var gears = new HashMap<Symbol, List<Integer>>();
-            int rows = schematic.length;
-            int columns = schematic[0].length;
-            for (int row = 0; row < rows; row++) {
-                for (int col = 0; col < columns; col++) {
-                    var c = schematic[row][col];
-                    if (Character.isDigit(c)) {
-                        var symbols = new HashSet<Symbol>();
-                        var number = number(schematic, row, col, 0, symbols);
-                        if (!symbols.isEmpty()) {
-                            for (var symbol : symbols) {
-                                if (symbol.type() == GEAR) {
-                                    gears.computeIfAbsent(symbol, pos -> new ArrayList<>())
-                                            .add(number);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return gears.values().stream()
-                    .filter(values -> values.size() == 2)
-                    .mapToInt(values -> values.stream()
-                            .mapToInt(Integer::intValue)
-                            .reduce(1, Math::multiplyExact))
+            var partNumbers = partNumbersBySymbol(input);
+            return partNumbers.entrySet().stream()
+                    .filter(e -> e.getKey().type() == GEAR && e.getValue().size() == 2)
+                    .mapToInt(e -> e.getValue().stream().mapToInt(Integer::intValue).reduce(1, Math::multiplyExact))
                     .sum();
         }
     }
-
-    private static final char GEAR = '*';
 
     private static final char SPACE = '.';
 
@@ -85,24 +49,41 @@ public class Day03 {
 
     }
 
-    private static int number(char[][] schematic, int row, int col, int value, Set<Symbol> symbols) {
-        if (checkBounds(schematic, row, col)) {
-            return value;
-        }
-        var c = schematic[row][col];
-        if (Character.isDigit(c)) {
-            schematic[row][col] = SPACE;
-            for (var offset : OFFSETS) {
-                int srow = row + offset[0];
-                int scol = col + offset[1];
-                if (isSymbol(schematic, srow, scol)) {
-                    symbols.add(new Symbol(srow, scol, schematic[srow][scol]));
+    private static Map<Symbol, List<Integer>> partNumbersBySymbol(Path input) throws IOException {
+        var schematic = parse(input);
+        var symbols = new HashMap<Symbol, List<Integer>>();
+        int rows = schematic.length;
+        int columns = schematic[0].length;
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < columns; col++) {
+                if (Character.isDigit(schematic[row][col])) {
+                    int number = 0;
+                    var start = col;
+                    while (col < columns && Character.isDigit(schematic[row][col])) {
+                        number = number * 10 + (schematic[row][col] - '0');
+                        col++;
+                    }
+                    var symbol = adjacentSymbol(schematic, row, start, col).orElse(null);
+                    if (symbol != null) {
+                        symbols.computeIfAbsent(symbol, k -> new ArrayList<>()).add(number);
+                    }
                 }
             }
-            value = value * 10 + (c - '0');
-            return number(schematic, row, col + 1, value, symbols);
         }
-        return value;
+        return symbols;
+    }
+
+    private static Optional<Symbol> adjacentSymbol(char[][] schematic, int row, int start, int end) {
+        for (var offset : OFFSETS) {
+            for (int col = start; col < end; col++) {
+                var srow = row + offset[0];
+                var scol = col + offset[1];
+                if (isSymbol(schematic, srow, scol)) {
+                    return Optional.of(new Symbol(srow, scol, schematic[srow][scol]));
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private static boolean isSymbol(char[][] schematic, int row, int col) {
