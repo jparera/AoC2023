@@ -12,25 +12,23 @@ import java.util.Optional;
 public class Day03 {
     public static class Part1 {
         public static int execute(Path input) throws IOException {
-            var partNumbers = partNumbersBySymbol(input);
-            return partNumbers.values().stream()
-                .flatMap(v -> v.stream())
-                .mapToInt(Integer::intValue)
-                .sum();
+            return partNumbers(input).values().stream()
+                    .flatMap(v -> v.stream())
+                    .mapToInt(Integer::intValue)
+                    .sum();
         }
     }
 
     public static class Part2 {
-        private static final char GEAR = '*';
-
         public static int execute(Path input) throws IOException {
-            var partNumbers = partNumbersBySymbol(input);
-            return partNumbers.entrySet().stream()
+            return partNumbers(input).entrySet().stream()
                     .filter(e -> e.getKey().type() == GEAR && e.getValue().size() == 2)
                     .mapToInt(e -> e.getValue().stream().mapToInt(Integer::intValue).reduce(1, Math::multiplyExact))
                     .sum();
         }
     }
+
+    private static final char GEAR = '*';
 
     private static final char SPACE = '.';
 
@@ -49,9 +47,9 @@ public class Day03 {
 
     }
 
-    private static Map<Symbol, List<Integer>> partNumbersBySymbol(Path input) throws IOException {
+    private static Map<Symbol, List<Integer>> partNumbers(Path input) throws IOException {
         var schematic = parse(input);
-        var symbols = new HashMap<Symbol, List<Integer>>();
+        var numbers = new HashMap<Symbol, List<Integer>>();
         int rows = schematic.length;
         int columns = schematic[0].length;
         for (int row = 0; row < rows; row++) {
@@ -65,12 +63,12 @@ public class Day03 {
                     }
                     var symbol = adjacentSymbol(schematic, row, start, col).orElse(null);
                     if (symbol != null) {
-                        symbols.computeIfAbsent(symbol, k -> new ArrayList<>()).add(number);
+                        numbers.computeIfAbsent(symbol, k -> new ArrayList<>()).add(number);
                     }
                 }
             }
         }
-        return symbols;
+        return numbers;
     }
 
     private static Optional<Symbol> adjacentSymbol(char[][] schematic, int row, int start, int end) {
