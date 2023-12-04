@@ -19,9 +19,9 @@ public class Day04 {
 
     public static class Part2 {
         public static int execute(Path input) throws IOException {
-            try (var cards = parse(input)) {
-                var list = cards.toList();
-                var n = list.size();
+            try (var stream = parse(input)) {
+                var cards = stream.toList();
+                var n = cards.size();       
 
                 var instances = new int[n];
                 Arrays.fill(instances, 1);
@@ -29,11 +29,10 @@ public class Day04 {
                 int sum = 0;
                 for (int i = 0; i < n; i++) {
                     sum += instances[i];
-                    var card = list.get(i);
-                    var quantity = instances[i];
+                    var card = cards.get(i);
                     for (int j = 1; j <= card.matchingNumbers(); j++) {
                         if (i + j < n) {
-                            instances[i + j] += quantity;
+                            instances[i + j] += instances[i];
                         }
                     }
                 }
