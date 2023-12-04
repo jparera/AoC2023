@@ -3,6 +3,8 @@ package net.wrlt.aoc2023.util;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +27,20 @@ public class StringsTest {
                     .bwMapIndexed(input, (str, i) -> Character.toUpperCase(str.charAt(i)))
                     .toArray();
             assertArrayEquals(new StringBuilder(input.toUpperCase()).reverse().chars().toArray(), uppercase);
+        }
+
+        @Test
+        void findNumbers() {
+            var input = "1, 2, 3";
+            var actual = Strings.numbers(input).toList();
+            assertEquals(List.of(1, 2, 3), actual);
+        }
+
+        @Test
+        void findWords() {
+            var input = "abc, efg, hij";
+            var actual = Strings.words(input).toList();
+            assertEquals(List.of("abc", "efg", "hij"), actual);
         }
 
         @Test

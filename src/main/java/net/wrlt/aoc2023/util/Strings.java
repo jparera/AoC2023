@@ -2,7 +2,10 @@ package net.wrlt.aoc2023.util;
 
 import java.util.OptionalInt;
 import java.util.function.IntPredicate;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class Strings {
 
@@ -24,6 +27,18 @@ public class Strings {
         return IntStream
                 .iterate(input.length() - 1, Math::decrementExact)
                 .limit(input.length());
+    }
+
+    private static final Pattern NUMBER = Pattern.compile("\\d+");
+
+    public static Stream<Integer> numbers(String line) {
+        return NUMBER.matcher(line).results().map(MatchResult::group).map(Integer::valueOf);
+    }
+
+    private static final Pattern WORDS = Pattern.compile("[A-Za-z]+");
+
+    public static Stream<String> words(String line) {
+        return WORDS.matcher(line).results().map(MatchResult::group);
     }
 
     /**

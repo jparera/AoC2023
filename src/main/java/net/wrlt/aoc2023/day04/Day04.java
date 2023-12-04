@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import net.wrlt.aoc2023.util.Strings;
 
 public class Day04 {
     public static class Part1 {
@@ -21,7 +23,7 @@ public class Day04 {
         public static int execute(Path input) throws IOException {
             try (var stream = parse(input)) {
                 var cards = stream.toList();
-                var n = cards.size();       
+                var n = cards.size();
 
                 var instances = new int[n];
                 Arrays.fill(instances, 1);
@@ -58,17 +60,11 @@ public class Day04 {
             return count == 0 ? 0 : 1 << (count - 1);
         }
 
-        public static Card valueOf(String text) {
-            var parts = text.split(":\\s+");
-            var id = Integer.parseInt(parts[0].split("\\s+")[1]);
-            var numberParts = parts[1].split("\\s+\\|\\s+");
-            var winningNumbers = new HashSet<Integer>(
-                    Arrays.stream(numberParts[0].split("\\s+"))
-                            .map(Integer::valueOf).toList());
-            var myNumbers = new HashSet<Integer>(
-                    Arrays.stream(numberParts[1].split("\\s+"))
-                            .map(Integer::valueOf)
-                            .toList());
+        public static Card valueOf(String line) {
+            var id = Strings.numbers(line).findFirst().orElseThrow() - 1;
+            var parts = line.split(":")[1].split("\\|");
+            var winningNumbers = Strings.numbers(parts[0]).collect(Collectors.toSet());
+            var myNumbers = Strings.numbers(parts[1]).collect(Collectors.toSet());
             return new Card(id - 1, winningNumbers, myNumbers);
         }
     }
