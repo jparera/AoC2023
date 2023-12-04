@@ -31,6 +31,10 @@ public class Strings {
 
     private static final Pattern NUMBER = Pattern.compile("\\d+");
 
+    public static Stream<String> numbersText(String line) {
+        return NUMBER.matcher(line).results().map(MatchResult::group);
+    }
+
     public static Stream<Integer> numbers(String line) {
         return NUMBER.matcher(line).results().map(MatchResult::group).map(Integer::valueOf);
     }
