@@ -44,7 +44,7 @@ public class Day04 {
         }
     }
 
-    private record Card(int id, Set<Integer> winningNumbers, Set<Integer> myNumbers) {
+    private record Card(Set<Integer> winningNumbers, Set<Integer> myNumbers) {
         public int matchingNumbers() {
             int count = 0;
             for (var number : winningNumbers) {
@@ -61,11 +61,10 @@ public class Day04 {
         }
 
         public static Card valueOf(String line) {
-            var id = Strings.numbers(line).findFirst().orElseThrow() - 1;
             var parts = line.split(":")[1].split("\\|");
             var winningNumbers = Strings.numbers(parts[0]).collect(Collectors.toSet());
             var myNumbers = Strings.numbers(parts[1]).collect(Collectors.toSet());
-            return new Card(id - 1, winningNumbers, myNumbers);
+            return new Card(winningNumbers, myNumbers);
         }
     }
 
