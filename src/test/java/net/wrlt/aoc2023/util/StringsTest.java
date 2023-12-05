@@ -33,7 +33,7 @@ public class StringsTest {
         void findNumbers() {
             var input = "1, 2, 3";
             var actual = Strings.numbers(input).toList();
-            assertEquals(List.of(1, 2, 3), actual);
+            assertEquals(List.of("1", "2", "3"), actual);
         }
 
         @Test

@@ -31,7 +31,7 @@ public class Day05 {
         }
 
         private static long[] seeds(Iterator<String> it) {
-            return Strings.numbersText(it.next()).mapToLong(Long::parseLong).toArray();
+            return Strings.numbers(it.next()).mapToLong(Long::parseLong).toArray();
         }
     }
 
@@ -50,7 +50,7 @@ public class Day05 {
         }
 
         private static List<Range> seeds(Iterator<String> it) {
-            var array = Strings.numbersText(it.next()).mapToLong(Long::parseLong).toArray();
+            var array = Strings.numbers(it.next()).mapToLong(Long::parseLong).toArray();
             var seeds = new ArrayList<Range>();
             for (int i = 0; i < array.length; i += 2) {
                 seeds.add(new Range(array[i], array[i] + array[i + 1]));
@@ -69,7 +69,7 @@ public class Day05 {
             if (line.endsWith(":")) {
                 maps.add(new Map());
             } else {
-                var range = Strings.numbersText(line).mapToLong(Long::parseLong).toArray();
+                var range = Strings.numbers(line).mapToLong(Long::parseLong).toArray();
                 maps.getLast().addRange(range[0], range[1], range[2]);
             }
         }

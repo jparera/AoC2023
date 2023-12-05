@@ -62,8 +62,10 @@ public class Day04 {
 
         public static Card valueOf(String line) {
             var parts = line.split(":")[1].split("\\|");
-            var winningNumbers = Strings.numbers(parts[0]).collect(Collectors.toSet());
-            var myNumbers = Strings.numbers(parts[1]).collect(Collectors.toSet());
+            var winningNumbers = Strings.numbers(parts[0]).map(Integer::valueOf)
+                    .collect(Collectors.toSet());
+            var myNumbers = Strings.numbers(parts[1]).map(Integer::valueOf)
+                    .collect(Collectors.toSet());
             return new Card(winningNumbers, myNumbers);
         }
     }
