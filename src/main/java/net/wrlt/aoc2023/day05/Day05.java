@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.OptionalLong;
 import java.util.stream.Stream;
 
+import net.wrlt.aoc2023.util.Ranges.OfLong.Range;
 import net.wrlt.aoc2023.util.Strings;
 
 public class Day05 {
@@ -40,7 +41,7 @@ public class Day05 {
             try (var lines = parse(input)) {
                 var it = lines.iterator();
                 var seeds = seeds(it);
-                var maps = maps(it);                
+                var maps = maps(it);
                 var mapInput = seeds;
                 for (var map : maps) {
                     mapInput = map.map(mapInput);
@@ -131,7 +132,7 @@ public class Day05 {
             }
 
             public OptionalLong map(long value) {
-                if (src.start <= value && value < src.end()) {
+                if (src.start() <= value && value < src.end()) {
                     return OptionalLong.of(dst.start() + (value - src.start()));
                 }
                 return OptionalLong.empty();
@@ -152,7 +153,7 @@ public class Day05 {
                 List<Range> mapped = List.of();
                 List<Range> unmapped = List.of();
                 var intersection = src.intersect(range);
-                if (!intersection.isEmpty()) {
+                if (intersection != null) {
                     mapped = List.of(toDst(intersection));
                     unmapped = range.substract(intersection);
                 } else {
@@ -169,44 +170,6 @@ public class Day05 {
 
             record Result(List<Range> mapped, List<Range> unmapped) {
             }
-        }
-    }
-
-    private record Range(long start, long end) {
-        private static final Range EMPTY = new Range(0, 0);
-
-        public long length() {
-            return Math.subtractExact(end, start);
-        }
-
-        public boolean isEmpty() {
-            return length() <= 0;
-        }
-
-        public List<Range> substract(Range range) {
-            var s = Math.max(this.start, range.start);
-            var e = Math.min(this.end, range.end);
-            var len = Math.subtractExact(e, s);
-            if (len <= 0) {
-                return List.of(this);
-            }
-            if (len == this.length()) {
-                return List.of();
-            }
-            var ranges = new ArrayList<Range>();
-            if (Math.subtractExact(s, this.start) > 0) {
-                ranges.add(new Range(this.start, s));
-            }
-            if (Math.subtractExact(this.end, e) > 0) {
-                ranges.add(new Range(e, this.end));
-            }
-            return ranges;
-        }
-
-        public Range intersect(Range range) {
-            var s = Math.max(start, range.start);
-            var e = Math.min(end, range.end);
-            return e - s > 0 ? new Range(s, e) : Range.EMPTY;
         }
     }
 
