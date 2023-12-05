@@ -40,7 +40,7 @@ public class Day05 {
             try (var lines = parse(input)) {
                 var it = lines.iterator();
                 var seeds = seeds(it);
-                var maps = maps(it);
+                var maps = maps(it);                
                 var mapInput = seeds;
                 for (var map : maps) {
                     mapInput = map.map(mapInput);
@@ -77,11 +77,16 @@ public class Day05 {
     }
 
     private static class Map {
-        private List<RangeMap> ranges = new ArrayList<>();
+        private List<RangeMap> rangeMaps = new ArrayList<>();
+
+        @Override
+        public String toString() {
+            return rangeMaps.toString();
+        }
 
         public long map(long value) {
-            for (var range : ranges) {
-                var mapped = range.map(value);
+            for (var rangeMap : rangeMaps) {
+                var mapped = rangeMap.map(value);
                 if (mapped.isPresent()) {
                     return mapped.orElseThrow();
                 }
@@ -92,8 +97,8 @@ public class Day05 {
         public List<Range> map(List<Range> seeds) {
             var output = new ArrayList<Range>();
             var unmapped = seeds;
-            for (var range : ranges) {
-                var result = range.map(unmapped);
+            for (var rangeMap : rangeMaps) {
+                var result = rangeMap.map(unmapped);
                 output.addAll(result.mapped());
                 unmapped = result.unmapped();
             }
@@ -101,19 +106,30 @@ public class Day05 {
             return output;
         }
 
-        @Override
-        public String toString() {
-            return ranges.toString();
-        }
-
         public void addRange(long dst, long src, long length) {
             if (length == 0) {
                 return;
             }
-            ranges.add(new RangeMap(new Range(src, src + length), new Range(dst, dst + length)));
+            var srcRange = new Range(src, src + length);
+            var dstRange = new Range(dst, dst + length);
+            rangeMaps.add(new RangeMap(srcRange, dstRange));
         }
 
-        record RangeMap(Range src, Range dst) {
+        private static class RangeMap {
+            private final Range src;
+
+            private final Range dst;
+
+            public RangeMap(Range src, Range dst) {
+                this.src = src;
+                this.dst = dst;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("RangeMap[src=%s, dst=%s]", src, dst);
+            }
+
             public OptionalLong map(long value) {
                 if (src.start <= value && value < src.end()) {
                     return OptionalLong.of(dst.start() + (value - src.start()));
@@ -121,30 +137,34 @@ public class Day05 {
                 return OptionalLong.empty();
             }
 
-            public Result map(List<Range> values) {
+            public Result map(List<Range> ranges) {
                 var mapped = new ArrayList<Range>();
                 var unmapped = new ArrayList<Range>();
-                for (var value : values) {
-                    var result = map(value);
+                for (var range : ranges) {
+                    var result = map(range);
                     mapped.addAll(result.mapped());
                     unmapped.addAll(result.unmapped());
                 }
                 return new Result(mapped, unmapped);
             }
 
-            private Result map(Range value) {
-                var mapped = new ArrayList<Range>();
-                var unmapped = new ArrayList<Range>();
-                var intersection = src.intersect(value);
+            private Result map(Range range) {
+                List<Range> mapped = List.of();
+                List<Range> unmapped = List.of();
+                var intersection = src.intersect(range);
                 if (!intersection.isEmpty()) {
-                    var start = dst.start() + (intersection.start() - src.start());
-                    var end = start + intersection.length();
-                    mapped.add(new Range(start, end));
-                    unmapped.addAll(value.substract(intersection));
+                    mapped = List.of(toDst(intersection));
+                    unmapped = range.substract(intersection);
                 } else {
-                    unmapped.add(value);
+                    unmapped = List.of(range);
                 }
                 return new Result(mapped, unmapped);
+            }
+
+            private Range toDst(Range range) {
+                var start = dst.start() + (range.start() - src.start());
+                var end = start + range.length();
+                return new Range(start, end);
             }
 
             record Result(List<Range> mapped, List<Range> unmapped) {
@@ -156,54 +176,37 @@ public class Day05 {
         private static final Range EMPTY = new Range(0, 0);
 
         public long length() {
-            return end - start;
+            return Math.subtractExact(end, start);
         }
 
         public boolean isEmpty() {
-            return length() == 0;
+            return length() <= 0;
         }
 
         public List<Range> substract(Range range) {
-            if (range.isEmpty() || range.end <= start || range.start >= end) {
+            var s = Math.max(this.start, range.start);
+            var e = Math.min(this.end, range.end);
+            var len = Math.subtractExact(e, s);
+            if (len <= 0) {
                 return List.of(this);
             }
-            if (range.start >= start && range.end <= end) {
-                var first = new Range(start, range.start);
-                var last = new Range(range.end, end);
-                var list = new ArrayList<Range>();
-                if (!first.isEmpty()) {
-                    list.add(first);
-                }
-                if (!last.isEmpty()) {
-                    list.add(last);
-                }
-                return list;
+            if (len == this.length()) {
+                return List.of();
             }
-            Range result;
-            if (range.start < start) {
-                result = new Range(range.end, end);
-            } else {
-                result = new Range(start, range.start);
+            var ranges = new ArrayList<Range>();
+            if (Math.subtractExact(s, this.start) > 0) {
+                ranges.add(new Range(this.start, s));
             }
-            return result.isEmpty() ? List.of() : List.of(result);
+            if (Math.subtractExact(this.end, e) > 0) {
+                ranges.add(new Range(e, this.end));
+            }
+            return ranges;
         }
 
         public Range intersect(Range range) {
-            if (isEmpty() || range.isEmpty()) {
-                return EMPTY;
-            }
-            var r1 = this;
-            var r2 = range;
-            if (r2.start < r1.start) {
-                var tmp = r1;
-                r1 = r2;
-                r2 = tmp;
-            }
-            if (r2.start >= r1.end) {
-                return EMPTY;
-            } else {
-                return new Range(r2.start, Math.min(r1.end, r2.end));
-            }
+            var s = Math.max(start, range.start);
+            var e = Math.min(end, range.end);
+            return e - s > 0 ? new Range(s, e) : Range.EMPTY;
         }
     }
 
