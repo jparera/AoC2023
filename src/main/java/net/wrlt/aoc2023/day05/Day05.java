@@ -3,6 +3,7 @@ package net.wrlt.aoc2023.day05;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,11 +22,10 @@ public class Day05 {
                 var maps = maps(it);
                 long min = Long.MAX_VALUE;
                 for (var seed : seeds) {
-                    var mapInput = seed;
                     for (var map : maps) {
-                        mapInput = map.map(mapInput);
+                        seed = map.apply(seed);
                     }
-                    min = Math.min(min, mapInput);
+                    min = Math.min(min, seed);
                 }
                 return min;
             }
@@ -42,11 +42,10 @@ public class Day05 {
                 var it = lines.iterator();
                 var seeds = seeds(it);
                 var maps = maps(it);
-                var mapInput = seeds;
                 for (var map : maps) {
-                    mapInput = map.map(mapInput);
+                    seeds = seeds.stream().flatMap(s -> map.apply(s).stream()).toList();
                 }
-                return mapInput.stream().mapToLong(Range::start).min().orElseThrow();
+                return seeds.stream().mapToLong(Range::start).min().orElseThrow();
             }
         }
 
@@ -78,16 +77,16 @@ public class Day05 {
     }
 
     private static class Map {
-        private List<RangeMap> rangeMaps = new ArrayList<>();
+        private List<Rule> rules = new ArrayList<>();
 
         @Override
         public String toString() {
-            return rangeMaps.toString();
+            return rules.toString();
         }
 
-        public long map(long value) {
-            for (var rangeMap : rangeMaps) {
-                var mapped = rangeMap.map(value);
+        public long apply(long value) {
+            for (var rule : rules) {
+                var mapped = rule.map(value);
                 if (mapped.isPresent()) {
                     return mapped.orElseThrow();
                 }
@@ -95,15 +94,25 @@ public class Day05 {
             return value;
         }
 
-        public List<Range> map(List<Range> seeds) {
+        public List<Range> apply(Range seed) {
             var output = new ArrayList<Range>();
-            var unmapped = seeds;
-            for (var rangeMap : rangeMaps) {
-                var result = rangeMap.map(unmapped);
-                output.addAll(result.mapped());
-                unmapped = result.unmapped();
+            var inputs = new ArrayDeque<Range>();
+            inputs.add(seed);
+            for (var rule : rules) {
+                int size = inputs.size();
+                for (int i = 0; i < size; i++) {
+                    var input = inputs.poll();
+                    var result = rule.map(input);
+                    if (result.mapped != null) {
+                        output.add(result.mapped());
+                    }
+                    inputs.addAll(result.unmapped());
+                }
+                if (inputs.isEmpty()) {
+                    break;
+                }
             }
-            output.addAll(unmapped);
+            output.addAll(inputs);
             return output;
         }
 
@@ -112,63 +121,42 @@ public class Day05 {
                 return;
             }
             var srcRange = new Range(src, src + length);
-            var dstRange = new Range(dst, dst + length);
-            rangeMaps.add(new RangeMap(srcRange, dstRange));
+            var delta = Math.subtractExact(dst, src);
+            rules.add(new Rule(srcRange, delta));
         }
 
-        private static class RangeMap {
+        private static class Rule {
             private final Range src;
 
-            private final Range dst;
+            private final long delta;
 
-            public RangeMap(Range src, Range dst) {
+            public Rule(Range src, long delta) {
                 this.src = src;
-                this.dst = dst;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("RangeMap[src=%s, dst=%s]", src, dst);
+                this.delta = delta;
             }
 
             public OptionalLong map(long value) {
                 if (src.start() <= value && value < src.end()) {
-                    return OptionalLong.of(dst.start() + (value - src.start()));
+                    return OptionalLong.of(value + delta);
                 }
                 return OptionalLong.empty();
             }
 
-            public Result map(List<Range> ranges) {
-                var mapped = new ArrayList<Range>();
-                var unmapped = new ArrayList<Range>();
-                for (var range : ranges) {
-                    var result = map(range);
-                    mapped.addAll(result.mapped());
-                    unmapped.addAll(result.unmapped());
-                }
-                return new Result(mapped, unmapped);
-            }
-
             private Result map(Range range) {
-                List<Range> mapped = List.of();
-                List<Range> unmapped = List.of();
-                var intersection = src.intersect(range);
-                if (intersection != null) {
-                    mapped = List.of(toDst(intersection));
-                    unmapped = range.substract(intersection);
+                Range mapped;
+                List<Range> unmapped;
+                var i = src.intersect(range);
+                if (i != null) {
+                    mapped = new Range(i.start() + delta, i.end() + delta);
+                    unmapped = range.substract(i);
                 } else {
+                    mapped = null;
                     unmapped = List.of(range);
                 }
                 return new Result(mapped, unmapped);
             }
 
-            private Range toDst(Range range) {
-                var start = dst.start() + (range.start() - src.start());
-                var end = start + range.length();
-                return new Range(start, end);
-            }
-
-            record Result(List<Range> mapped, List<Range> unmapped) {
+            public record Result(Range mapped, List<Range> unmapped) {
             }
         }
     }
