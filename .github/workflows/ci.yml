@@ -1,6 +1,10 @@
 name: CI
 
-on: [push]
+on: 
+  push:
+    branches: 
+      - 'main'
+  pull_request:
 
 permissions:
   contents: read
@@ -11,6 +15,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                persist-credentials: false
             - name: Setup Java JDK
               uses: actions/setup-java@v4
               with:
@@ -18,4 +24,4 @@ jobs:
                 java-version: 21
                 cache: gradle
             - name: Gradle test task
-              run: ./gradlew --no-daemon test
+              run: ./gradlew --no-daemon clean test
