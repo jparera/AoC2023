@@ -56,18 +56,12 @@ public class Day06 {
     }
 
     private static int solutions(Race race) {
-        var record = race.distanceRecord();
+        long record = race.distanceRecord() + 1;
         double half_duration = race.duration() / (double) 2;
         double half_duration_squared = half_duration * half_duration;
         double sqrt = Math.sqrt(half_duration_squared - record);
         long t1 = (long) Math.ceil(half_duration - sqrt);
         long t2 = (long) Math.floor(half_duration + sqrt);
-        while (t1 * (race.duration() - t1) <= record) {
-            t1++;
-        }
-        while (t2 * (race.duration() - t2) <= record) {
-            t2--;
-        }
         return (int) (t2 - t1 + 1);
     }
 
