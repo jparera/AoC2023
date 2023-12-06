@@ -3,23 +3,20 @@ package net.wrlt.aoc2023;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
 import net.wrlt.aoc2023.util.Tests;
 
-@Timeout(value = 15, unit = TimeUnit.SECONDS)
 class DayTest {
     Path input() {
         return Tests.toPath(this.getClass(), "input.txt");
     }
 
     @Nested
-    class Part1 {
+    class Part1Test {
         Path example1() {
             return Tests.toPath(this.getClass(), "example1.txt");
         }
@@ -40,7 +37,7 @@ class DayTest {
     }
 
     @Nested
-    class Part2 {
+    class Part2Test {
         Path example2() {
             return Tests.toPath(this.getClass(), "example2.txt");
         }

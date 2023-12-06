@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-public class StreamsTest {
+class StreamsTest {
     private Path input() {
         return Tests.toPath(getClass(), "streams.txt");
     }
