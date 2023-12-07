@@ -5,41 +5,35 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import net.wrlt.aoc2023.util.Streams;
-
 public class Day07 {
     public static class Part1 {
-        private static char[] CARDS = { '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A' };
-
-        private static Scale SCALE = Scale.ofCards(CARDS);
+        private static char[] CARD_SET = { '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A' };
 
         public static long execute(Path input) throws IOException {
-            return winnings(input, SCALE, Part1::handTypeResolver);
+            return winnings(input, Scale.ofCards(CARD_SET, Part1::cardFrequencies));
         }
 
-        private static HandType handTypeResolver(String cards) {
-            var f = new int[CARDS.length];
+        private static int[] cardFrequencies(String cards, int[] map) {
+            var f = new int[CARD_SET.length];
             for (int i = 0; i < cards.length(); i++) {
-                var card = SCALE.weight(cards.charAt(i));
+                var card = map[cards.charAt(i)];
                 f[card]++;
             }
-            return HandType.of(f, cards.length());
+            return f;
         }
     }
 
     public static class Part2 {
-        private static final char[] CARDS = { 'J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A' };
+        private static final char[] CARD_SET = { 'J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A' };
 
         private static final char JOKER = 'J';
 
-        private static final Scale SCALE = Scale.ofCards(CARDS);
-
         public static int execute(Path input) throws IOException {
-            return winnings(input, SCALE, Part2::handTypeResolver);
+            return winnings(input, Scale.ofCards(CARD_SET, Part2::cardFrequencies));
         }
 
-        private static HandType handTypeResolver(String cards) {
-            var f = new int[CARDS.length];
+        private static int[] cardFrequencies(String cards, int[] map) {
+            var f = new int[CARD_SET.length];
             int max = Integer.MIN_VALUE;
             int maxIndex = 0;
             var jokers = 0;
@@ -48,7 +42,7 @@ public class Day07 {
                     jokers++;
                     continue;
                 }
-                var card = SCALE.weight(cards.charAt(i));
+                var card = map[cards.charAt(i)];
                 f[card]++;
                 if (f[card] > max) {
                     max = f[card];
@@ -56,35 +50,34 @@ public class Day07 {
                 }
             }
             f[maxIndex] += jokers;
-            return HandType.of(f, cards.length());
+            return f;
         }
     }
 
-    private static int winnings(Path input, Scale scale, HandType.Resolver resolver) throws IOException {
+    private static int winnings(Path input, Scale scale) throws IOException {
         try (var lines = parse(input)) {
-            return Streams
-                    .enumerate(lines
-                            .map(line -> Hand.valueOf(line, scale, resolver))
-                            .sorted())
-                    .mapToInt(e -> Math.multiplyExact(e.element().bid(), e.index() + 1))
-                    .reduce(0, Math::addExact);
+            var sorted = lines.map(line -> Hand.valueOf(line, scale)).sorted();
+            var it = sorted.iterator();
+            int sum = 0;
+            for (int i = 1; it.hasNext(); i++) {
+                var hand = it.next();
+                sum += i * hand.bid();
+            }
+            return sum;
         }
     }
 
     private static class Hand implements Comparable<Hand> {
         private String cards;
 
-        private int weight;
-
         private int bid;
 
-        private HandType type;
+        private int weight;
 
-        public Hand(String cards, int weight, int bid, HandType type) {
+        public Hand(String cards, int bid, int weight) {
             this.cards = cards;
             this.weight = weight;
             this.bid = bid;
-            this.type = type;
         }
 
         public int bid() {
@@ -93,90 +86,51 @@ public class Day07 {
 
         @Override
         public String toString() {
-            return String.format("Hand[cards=%s, type=%s]", cards, type);
+            return String.format("%s %s", cards, bid);
         }
 
         @Override
         public int compareTo(Hand o) {
-            int cmp = type.compareTo(o.type);
-            if (cmp != 0) {
-                return cmp;
-            }
             return Integer.compareUnsigned(weight, o.weight);
         }
 
-        public static Hand valueOf(String line, Scale scale, HandType.Resolver resolver) {
+        public static Hand valueOf(String line, Scale scale) {
             var parts = line.split("\\s");
             var cards = parts[0];
-            var weight = scale.weight(cards);
             var bid = Integer.parseInt(parts[1]);
-            var type = resolver.resolve(parts[0]);
-            return new Hand(parts[0], weight, bid, type);
-        }
-
-    }
-
-    enum HandType {
-        HIGH_CARD,
-        ONE_PAIR,
-        TWO_PAIR,
-        TREE_OF_A_KIND,
-        FULL_HOUSE,
-        FOUR_OF_A_KIND,
-        FIVE_OF_A_KIND;
-
-        public static HandType of(int[] frequencies, int handCards) {
-            var f = new int[handCards + 1];
-            for (int i = 0; i < frequencies.length; i++) {
-                f[frequencies[i]]++;
-            }
-            if (f[1] == 5) {
-                // High card: { 1, 1, 1, 1, 1 }
-                return HIGH_CARD;
-            } else if (f[1] == 3) {
-                // One pair: { 1, 1, 1, 2 }
-                return ONE_PAIR;
-            } else if (f[1] == 1 && f[2] == 2) {
-                // Two pair: { 1, 2, 2 }
-                return TWO_PAIR;
-            } else if (f[1] == 2 && f[3] == 1) {
-                // Three of a kind: { 1, 1, 3 }
-                return TREE_OF_A_KIND;
-            } else if (f[2] == 1 && f[3] == 1) {
-                // Full house: { 2, 3 }
-                return FULL_HOUSE;
-            } else if (f[4] == 1) {
-                // Four of a kind: { 1, 4 }
-                return FOUR_OF_A_KIND;
-            } else {
-                // Five of a kind: { 5 }
-                return FIVE_OF_A_KIND;
-            }
-        }
-
-        @FunctionalInterface
-        interface Resolver {
-            public HandType resolve(String cards);
+            var weight = scale.weight(cards);
+            return new Hand(parts[0], bid, weight);
         }
     }
 
     private static class Scale {
         private final int[] map;
 
-        public Scale(int[] map) {
+        private final CardFrequencies cardFrequencies;
+
+        public Scale(int[] map, CardFrequencies cardFrequencies) {
             this.map = map;
+            this.cardFrequencies = cardFrequencies;
         }
 
-        public int weight(char card) {
-            return map[card];
+        public static Scale ofCards(char[] cardSet, CardFrequencies frequencies) {
+            // 4 bits = 16 -> 4 * 1 type + 4 * 5 cards = 24 bits < 32
+            if (cardSet.length > 16) {
+                throw new IllegalArgumentException();
+            }
+            var map = new int[256];
+            for (int i = 0; i < cardSet.length; i++) {
+                map[cardSet[i]] = i;
+            }
+            return new Scale(map, frequencies);
         }
 
         public int weight(String cards) {
-            // 4 bits = 16 cards -> 4 bits * 5 cards = 20 bits < 32 bits
+            // 4 bits = 16 -> 4 * 1 type + 4 * 5 cards = 24 bits < 32
             if (cards.length() > 5) {
                 throw new IllegalArgumentException();
             }
-            int weight = 0;
+            int weight = typeWeight(cards);
             for (int i = 0; i < cards.length(); i++) {
                 weight <<= 4;
                 weight += map[cards.charAt(i)];
@@ -184,16 +138,39 @@ public class Day07 {
             return weight;
         }
 
-        public static Scale ofCards(char[] cards) {
-            // 4 bits = 16 cards -> 4 bits * 5 cards = 20 bits < 32 bits
-            if (cards.length > 16) {
-                throw new IllegalArgumentException();
+        private int typeWeight(String cards) {
+            var f = cardFrequencies.count(cards, map);
+            var ff = new int[cards.length() + 1];
+            for (int i = 0; i < f.length; i++) {
+                ff[f[i]]++;
             }
-            var map = new int[256];
-            for (int i = 0; i < cards.length; i++) {
-                map[cards[i]] = i;
+            if (ff[1] == 5) {
+                // High card: { 1, 1, 1, 1, 1 }
+                return 0;
+            } else if (ff[1] == 3) {
+                // One pair: { 1, 1, 1, 2 }
+                return 1;
+            } else if (ff[1] == 1 && ff[2] == 2) {
+                // Two pair: { 1, 2, 2 }
+                return 2;
+            } else if (ff[1] == 2 && ff[3] == 1) {
+                // Three of a kind: { 1, 1, 3 }
+                return 3;
+            } else if (ff[2] == 1 && ff[3] == 1) {
+                // Full house: { 2, 3 }
+                return 4;
+            } else if (ff[4] == 1) {
+                // Four of a kind: { 1, 4 }
+                return 5;
+            } else {
+                // Five of a kind: { 5 }
+                return 6;
             }
-            return new Scale(map);
+        }
+
+        @FunctionalInterface
+        private interface CardFrequencies {
+            int[] count(String cards, int[] map);
         }
     }
 
