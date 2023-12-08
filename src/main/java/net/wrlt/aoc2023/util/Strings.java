@@ -41,6 +41,12 @@ public class Strings {
         return WORDS.matcher(line).results().map(MatchResult::group);
     }
 
+    private static final Pattern ALPHANUMERICS = Pattern.compile("[A-Za-z0-9]+");
+
+    public static Stream<String> aphanumerics(String line) {
+        return ALPHANUMERICS.matcher(line).results().map(MatchResult::group);
+    }
+
     /**
      * Maps <code>str</code> character at <code>index</code> to an integer.
      */

@@ -59,6 +59,13 @@ class StringsTest {
         assertEquals(List.of("abc", "efg", "hij"), actual);
     }
 
+    @Test
+    void findAlphanumerics() {
+        var input = "1bc, e2g, hi3";
+        var actual = Strings.aphanumerics(input).toList();
+        assertEquals(List.of("1bc", "e2g", "hi3"), actual);
+    }
+
     @Nested
     class CharsTest {
         @Test
