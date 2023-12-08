@@ -52,12 +52,15 @@ public class Day08 {
                     statusNodes.add(new LinkedHashMap<>());
                 }
 
+                int total = currents.length;
+                var stepsToCycleEntry = new int[total];
                 int index = 0;
                 int steps = 0;
-                int total = currents.length;
                 int finished = 0;
-                while (finished < total) {
+                int currentFinished = 0;
+                while (currentFinished < total && finished < total) {
                     char c = instructions.charAt(index);
+                    currentFinished = 0;
                     for (int i = 0; i < total; i++) {
                         if (currents[i] == null) {
                             continue;
@@ -65,9 +68,11 @@ public class Day08 {
                         var lr = map.get(currents[i]);
                         var next = lr[c == 'L' ? 1 : 2];
                         if (next.endsWith("Z")) {
+                            currentFinished++;
                             var statusNode = statusNodes.get(i);
                             var status = new Status(index, next);
                             if (statusNode.containsKey(status)) {
+                                stepsToCycleEntry[i] = statusNode.get(status);
                                 next = null;
                                 finished++;
                             } else {
@@ -80,24 +85,17 @@ public class Day08 {
                     steps++;
                 }
 
-                var values = new int[total];
-                for (int i = 0; i < total; i++) {
-                    var statusNode = statusNodes.get(i);
-                    values[i] = statusNode.values()
-                            .stream()
-                            .mapToInt(Integer::intValue)
-                            .min()
-                            .orElseThrow();
+                if (currentFinished == total) {
+                    return steps;
                 }
 
-                int gcd = values[0];
+                int gcd = stepsToCycleEntry[0];
                 for (int i = 1; i < total; i++) {
-                    gcd = gcd(gcd, values[i]);
+                    gcd = gcd(gcd, stepsToCycleEntry[i]);
                 }
                 long lcm = gcd;
                 for (int i = 0; i < total; i++) {
-                    int value = values[i] / gcd;
-                    lcm = Math.multiplyExact(lcm, value);
+                    lcm = Math.multiplyExact(lcm, stepsToCycleEntry[i] / gcd);
                 }
 
                 return lcm;
