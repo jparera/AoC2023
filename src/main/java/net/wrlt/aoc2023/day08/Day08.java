@@ -19,15 +19,13 @@ public class Day08 {
                 var it = lines.iterator();
                 var instructions = it.next();
                 var map = map(it);
+                var current = "AAA";
                 int index = 0;
                 int steps = 0;
-                String current = "AAA";
                 while (!"ZZZ".equals(current)) {
-                    var lr = map.get(current);
-                    char c = instructions.charAt(index);
-                    var next = lr[c == 'L' ? 1 : 2];
+                    int lr = instructions.charAt(index) == 'L' ? 0 : 1;
+                    current = map.get(current)[lr];
                     index = (index + 1) % instructions.length();
-                    current = next;
                     steps++;
                 }
                 return steps;
@@ -43,59 +41,63 @@ public class Day08 {
                 var instructions = it.next();
                 var map = map(it);
 
-                var currents = map.keySet().stream()
-                        .filter(k -> k.endsWith("A"))
-                        .toArray(String[]::new);
+                var endsWithA = new ArrayList<String>();
+                for (var key : map.keySet()) {
+                    if (key.charAt(2) == 'A') {
+                        endsWithA.add(key);
+                    }
+                }
 
+                var nodes = endsWithA.toArray(String[]::new);
                 var statusNodes = new ArrayList<Map<Status, Integer>>();
-                for (int i = 0; i < currents.length; i++) {
+                for (int i = 0; i < nodes.length; i++) {
                     statusNodes.add(new LinkedHashMap<>());
                 }
 
-                int total = currents.length;
-                var stepsToCycleEntry = new int[total];
+                int total = nodes.length;
+                var stepsToFirstEndInCycle = new int[total];
                 int index = 0;
                 int steps = 0;
-                int finished = 0;
-                int currentFinished = 0;
-                while (currentFinished < total && finished < total) {
-                    char c = instructions.charAt(index);
-                    currentFinished = 0;
+                int finishedPaths = 0;
+                int numEndings = 0;
+                while (numEndings < total && finishedPaths < total) {
+                    int lr = instructions.charAt(index) == 'L' ? 0 : 1;
+                    numEndings = 0;
                     for (int i = 0; i < total; i++) {
-                        if (currents[i] == null) {
+                        var node = nodes[i];
+                        if (node == null) {
                             continue;
                         }
-                        var lr = map.get(currents[i]);
-                        var next = lr[c == 'L' ? 1 : 2];
-                        if (next.endsWith("Z")) {
-                            currentFinished++;
+                        nodes[i] = map.get(node)[lr];
+                        if (node.charAt(2) == 'Z') {
+                            numEndings++;
                             var statusNode = statusNodes.get(i);
-                            var status = new Status(index, next);
-                            if (statusNode.containsKey(status)) {
-                                stepsToCycleEntry[i] = statusNode.get(status);
-                                next = null;
-                                finished++;
+                            var status = new Status(node, index);
+                            var stepsNode = statusNode.get(status);
+                            if (stepsNode != null) {
+                                stepsToFirstEndInCycle[i] = stepsNode;
+                                finishedPaths++;
+                                nodes[i] = null;
                             } else {
-                                statusNode.put(status, steps + 1);
+                                statusNode.put(status, steps);
                             }
                         }
-                        currents[i] = next;
                     }
                     index = (index + 1) % instructions.length();
                     steps++;
                 }
 
-                if (currentFinished == total) {
+                if (numEndings == total) {
                     return steps;
                 }
 
-                int gcd = stepsToCycleEntry[0];
+                int gcd = stepsToFirstEndInCycle[0];
                 for (int i = 1; i < total; i++) {
-                    gcd = gcd(gcd, stepsToCycleEntry[i]);
+                    gcd = gcd(gcd, stepsToFirstEndInCycle[i]);
                 }
                 long lcm = gcd;
                 for (int i = 0; i < total; i++) {
-                    lcm = Math.multiplyExact(lcm, stepsToCycleEntry[i] / gcd);
+                    lcm = Math.multiplyExact(lcm, stepsToFirstEndInCycle[i] / gcd);
                 }
 
                 return lcm;
@@ -108,7 +110,7 @@ public class Day08 {
             return gcd(b, a % b);
         }
 
-        record Status(int instruction, String node) {
+        record Status(String node, int index) {
         }
     }
 
@@ -120,7 +122,7 @@ public class Day08 {
                 continue;
             }
             var nodes = Strings.aphanumerics(line).toArray(String[]::new);
-            map.put(nodes[0], nodes);
+            map.put(nodes[0], new String[] { nodes[1], nodes[2] });
         }
         return map;
     }
