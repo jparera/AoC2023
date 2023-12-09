@@ -91,6 +91,9 @@ public class Day08 {
                     return steps;
                 }
 
+                // The remainder and the cycle length are the same.
+                // In this case the result it is the LCM of all remainder/cycle.
+
                 int gcd = stepsToFirstEndInCycle[0];
                 for (int i = 1; i < total; i++) {
                     gcd = gcd(gcd, stepsToFirstEndInCycle[i]);
