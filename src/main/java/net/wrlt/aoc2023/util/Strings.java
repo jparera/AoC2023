@@ -35,6 +35,12 @@ public class Strings {
         return NUMBER.matcher(line).results().map(MatchResult::group);
     }
 
+    private static final Pattern INTEGER = Pattern.compile("-?\\d+");
+
+    public static Stream<String> integers(String line) {
+        return INTEGER.matcher(line).results().map(MatchResult::group);
+    }
+
     private static final Pattern WORDS = Pattern.compile("[A-Za-z]+");
 
     public static Stream<String> words(String line) {
