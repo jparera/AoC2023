@@ -23,15 +23,15 @@ public class Day10 {
         public static int execute(Path input) throws IOException {
             try (var lines = parse(input)) {
                 var map = lines.map(line -> line.toCharArray()).toArray(char[][]::new);
-                var pipes = loopPipes(map);
+                var loop = loop(map);
 
                 cleanExtraPipes(map);
-                markDirection(pipes, map);
-                markSides(pipes, map);
-                fillGaps(map);
+                markOrientation(loop, map);
+                markSides(loop, map);
+                fillGaps(map, INSIDE);
 
                 // Terminal.get().print(copy(map));
-                // Terminal.get().printf("Count: " + count(map, OUTSIDE));
+                // Terminal.get().printf("Count: " + count(map, INSIDE));
 
                 return count(map, INSIDE);
             }
@@ -99,7 +99,7 @@ public class Day10 {
         return steps;
     }
 
-    static List<int[]> loopPipes(char[][] map) {
+    static List<int[]> loop(char[][] map) {
         var start = findStart(map);
         var list = new ArrayList<int[]>();
         var stack = new ArrayDeque<int[]>();
@@ -121,86 +121,89 @@ public class Day10 {
         return list;
     }
 
-    private static void markDirection(List<int[]> pipes, char[][] map) {
-        for (int i = 0; i < pipes.size(); i++) {
-            var current = pipes.get(i);
-            var d = direction(current, pipes.get((i + 1) % pipes.size()));
-            map[current[ROW]][current[COL]] = (char) d[VALUE];
-        }
-    }
-
-    private static void markSides(List<int[]> pipes, char[][] map) {
-        var start = findTopLeft(pipes, map);
-        var offset = start[INDEX];
-        var last = offset == 0 ? pipes.getLast() : pipes.get((offset - 1) % pipes.size());
-        var v = direction(map[last[ROW]][last[COL]]);
-        int[] previous = null;
-        var sign = 1;
-        if (v == NORTH || v == SOUTH) {
-            previous = sign == 1 ? EAST : WEST;
-        } else {
-            previous = sign == 1 ? SOUTH : NORTH;
-        }
-        for (int i = 0; i < pipes.size(); i++) {
-            var current = pipes.get((i + offset) % pipes.size());
-            var u = direction(map[current[ROW]][current[COL]]);
-
-            var nord = v == NORTH || u == NORTH;
-            var south = v == SOUTH || u == SOUTH;
-            var east = v == EAST || u == EAST;
-            var west = v == WEST || u == WEST;
-
-            var corner = v != u;
-            if (corner && ((nord && west) || (south && east))) {
-                sign *= -1;
-            }
-
-            int[] outside;
-            if (u == NORTH || u == SOUTH) {
-                outside = sign == 1 ? EAST : WEST;
-            } else {
-                outside = sign == 1 ? SOUTH : NORTH;
-            }
-
-            if (corner && previous != null) {
-                var p = go(current, previous, map);
-                if (p[VALUE] == GROUND) {
-                    set(p, INSIDE, map);
-                }
-            }
-            var p = go(current, outside, map);
-            if (p[VALUE] == GROUND) {
-                set(p, INSIDE, map);
-            }
-            previous = outside;
-            v = u;
-        }
-    }
-
-    private static void fillGaps(char[][] map) {
-        int rows = map.length;
-        int cols = map[0].length;
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                if (map[r][c] == INSIDE) {
-                    fill(r, c, map[r][c], map);
-                }
-            }
-        }
-    }
-
     private static int cleanExtraPipes(char[][] map) {
         int count = 0;
         int rows = map.length;
         int cols = map[0].length;
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                if (GO_MAP[map[r][c]] != null) {
+                if (map[r][c] != LOOP) {
                     map[r][c] = GROUND;
                 }
             }
         }
         return count;
+    }
+
+    private static void markOrientation(List<int[]> loop, char[][] map) {
+        for (int i = 0; i < loop.size(); i++) {
+            var current = loop.get(i);
+            var o = orientation(current, loop.get((i + 1) % loop.size()));
+            current[VALUE] = map[current[ROW]][current[COL]] = (char) o[VALUE];
+        }
+    }
+
+    private static void markSides(List<int[]> loop, char[][] map) {
+        var topLeft = findTopLeft(loop, map);
+        var offset = topLeft[INDEX] + 1;
+        var last = topLeft;
+        var po = orientation(last);
+        var sign = 1;
+        var previousInside = insideOrientation(po, sign);
+        for (int i = 0; i < loop.size(); i++) {
+            var current = loop.get((i + offset) % loop.size());
+
+            var o = orientation(current);
+            var nord = po == NORTH || o == NORTH;
+            var south = po == SOUTH || o == SOUTH;
+            var east = po == EAST || o == EAST;
+            var west = po == WEST || o == WEST;
+
+            var corner = po != o;
+            if (corner && ((nord && west) || (south && east))) {
+                sign *= -1;
+            }
+
+            var inside = insideOrientation(o, sign);
+
+            if (corner) {
+                var p = go(current, previousInside, map);
+                if (p[VALUE] == GROUND) {
+                    set(p, INSIDE, map);
+                }
+                var diagonal = new int[] { previousInside[ROW] + inside[ROW], previousInside[COL] + inside[COL] };
+                p = go(current, diagonal, map);
+                if (p[VALUE] == GROUND) {
+                    set(p, INSIDE, map);
+                }
+            }
+            var p = go(current, inside, map);
+            if (p[VALUE] == GROUND) {
+                set(p, INSIDE, map);
+            }
+            previousInside = inside;
+            po = o;
+        }
+    }
+
+    private static int[] insideOrientation(int[] o, int sign) {
+        if (o == NORTH || o == SOUTH) {
+            return sign == 1 ? EAST : WEST;
+        } else {
+            return sign == 1 ? SOUTH : NORTH;
+        }
+    }
+
+    private static void fillGaps(char[][] map, char side) {
+        int rows = map.length;
+        int cols = map[0].length;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (map[r][c] == side) {
+                    fill(r, c, map[r][c], map);
+                }
+            }
+        }
     }
 
     private static int count(char[][] map, char side) {
@@ -243,8 +246,8 @@ public class Day10 {
         }
     }
 
-    private static int[] direction(char c) {
-        return switch (c) {
+    private static int[] orientation(int[] p) {
+        return switch (p[VALUE]) {
             case 'N' -> NORTH;
             case 'S' -> SOUTH;
             case 'E' -> EAST;
@@ -253,7 +256,7 @@ public class Day10 {
         };
     }
 
-    private static int[] direction(int[] current, int[] next) {
+    private static int[] orientation(int[] current, int[] next) {
         int rd = next[ROW] - current[ROW];
         int cd = next[COL] - current[COL];
         if (rd > 0) {
