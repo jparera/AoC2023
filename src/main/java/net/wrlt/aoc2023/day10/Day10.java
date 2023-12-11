@@ -13,7 +13,7 @@ public class Day10 {
     public static class Part1 {
         public static int execute(Path input) throws IOException {
             try (var lines = parse(input)) {
-                var map = lines.map(line -> line.toCharArray()).toArray(char[][]::new);
+                var map = lines.map(String::toCharArray).toArray(char[][]::new);
                 return loopLength(map);
             }
         }
@@ -22,16 +22,13 @@ public class Day10 {
     public static class Part2 {
         public static int execute(Path input) throws IOException {
             try (var lines = parse(input)) {
-                var map = lines.map(line -> line.toCharArray()).toArray(char[][]::new);
-                var loop = loop(map);
+                var map = lines.map(String::toCharArray).toArray(char[][]::new);
 
+                var loop = loop(map);
                 cleanExtraPipes(map);
                 markOrientation(loop, map);
                 markSides(loop, map);
                 fillGaps(map, INSIDE);
-
-                // Terminal.get().print(copy(map));
-                // Terminal.get().printf("Count: " + count(map, INSIDE));
 
                 return count(map, INSIDE);
             }
@@ -154,18 +151,16 @@ public class Day10 {
             var current = loop.get((i + offset) % loop.size());
 
             var o = orientation(current);
-            var nord = po == NORTH || o == NORTH;
+            var north = po == NORTH || o == NORTH;
             var south = po == SOUTH || o == SOUTH;
             var east = po == EAST || o == EAST;
             var west = po == WEST || o == WEST;
-
             var corner = po != o;
-            if (corner && ((nord && west) || (south && east))) {
+            if (corner && ((north && west) || (south && east))) {
                 sign *= -1;
             }
 
             var inside = insideOrientation(o, sign);
-
             if (corner) {
                 var p = go(current, previousInside, map);
                 if (p[VALUE] == GROUND) {
@@ -206,20 +201,6 @@ public class Day10 {
         }
     }
 
-    private static int count(char[][] map, char side) {
-        int count = 0;
-        int rows = map.length;
-        int cols = map[0].length;
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                if (map[r][c] == side) {
-                    count++;
-                }
-            }
-        }
-        return count;
-    }
-
     private static void fill(int r, int c, char side, char[][] map) {
         int rows = map.length;
         int cols = map[0].length;
@@ -244,6 +225,20 @@ public class Day10 {
         if (e[VALUE] == GROUND) {
             fill(e[ROW], e[COL], side, map);
         }
+    }
+
+    private static int count(char[][] map, char side) {
+        int count = 0;
+        int rows = map.length;
+        int cols = map[0].length;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (map[r][c] == side) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     private static int[] orientation(int[] p) {
