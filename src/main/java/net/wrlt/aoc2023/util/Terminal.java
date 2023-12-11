@@ -1,20 +1,25 @@
 package net.wrlt.aoc2023.util;
 
-import java.io.Console;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 
 public class Terminal {
-    private Console console;
+    private static final String DEFAULT_SEPARATOR = ",";
 
-    public Terminal(Console console) {
-        this.console = console;
+    private Output output;
+
+    interface Output {
+        void print(String value);
+    }
+
+    public Terminal(Output output) {
+        this.output = output;
     }
 
     public static Terminal get() {
-        return new Terminal(System.console());
+        return new Terminal(System.out::print);
     }
 
     public Terminal alternateScreen() {
@@ -63,7 +68,42 @@ public class Terminal {
         return iterate(
                 0, array.length,
                 i -> leftPad(Long.toString(array[i]), leftPad),
-                highlightRow, highlightCol);
+                DEFAULT_SEPARATOR, highlightRow, highlightCol);
+    }
+
+    public Terminal print(char[][] matrix) {
+        return print(matrix, row -> false, col -> false);
+    }
+
+    public Terminal print(char[][] matrix, IntPredicate highlightRow) {
+        return print(matrix, highlightRow, col -> false);
+    }
+
+    public Terminal print(char[][] matrix, IntPredicate highlightRow, IntPredicate highlightCol) {
+        var max = digits(matrix.length - 1);
+        for (int i = 0; i < matrix.length; i++) {
+            printf("%s: ", leftPad(Integer.toString(i), max));
+            print(matrix[i], highlightRow.test(i), highlightCol);
+        }
+        return this;
+    }
+
+    public Terminal print(char[] array) {
+        return print(array, i -> false);
+    }
+
+    public Terminal print(char[] array, IntPredicate highlightCol) {
+        return print(array, false, highlightCol);
+    }
+
+    private Terminal print(
+            char[] array,
+            boolean highlightRow,
+            IntPredicate highlightCol) {
+        return iterate(
+                0, array.length,
+                i -> Character.toString(array[i]),
+                "", highlightRow, highlightCol);
     }
 
     public Terminal print(long[][] matrix) {
@@ -104,7 +144,7 @@ public class Terminal {
         return iterate(
                 0, array.length,
                 i -> leftPad(Long.toString(array[i]), leftPad),
-                highlightBackground, highlightCol);
+                DEFAULT_SEPARATOR, highlightBackground, highlightCol);
     }
 
     public <T> Terminal print(T[][] matrix) {
@@ -149,13 +189,14 @@ public class Terminal {
         return iterate(
                 0, array.length,
                 i -> leftPad(Objects.toString(array[i]), leftPad),
-                highlightBackground, highlightCol);
+                DEFAULT_SEPARATOR, highlightBackground, highlightCol);
     }
 
     private Terminal iterate(
             int start,
             int end,
             IntFunction<String> fn,
+            String separator,
             boolean highlightRow,
             IntPredicate highlightCol) {
         var builder = Job.builder();
@@ -166,7 +207,8 @@ public class Terminal {
             } else {
                 builder.defaultColor();
             }
-            builder.append(fn.apply(i));
+            var value = fn.apply(i);
+            builder.append(value);
             if (highlightRow || highlightCol.test(i)) {
                 builder.turnOffAttributes();
                 if (highlightRow) {
@@ -174,7 +216,7 @@ public class Terminal {
                 }
             }
             if (i < end - 1) {
-                builder.comma();
+                builder.accentColor().append(separator);
             }
         }
         if (highlightRow) {
@@ -190,14 +232,14 @@ public class Terminal {
     }
 
     public Terminal printf(String format, Object... args) {
-        console.printf(String.format(format, args));
+        output.print(String.format(format, args));
         return this;
     }
 
     private Terminal execute(Job job) {
-        console.printf(job.toString());
+        output.print(job.toString());
         if (job.isTurnOffAttributes()) {
-            console.printf(Job.TURNOFF_ATTRIBUTES.toString());
+            output.print(Job.TURNOFF_ATTRIBUTES.toString());
         }
         return this;
     }
@@ -245,9 +287,6 @@ public class Terminal {
 
         static Job CLOSE_PARENTHESIS = Job
                 .builder().accentColor().append(']').build();
-
-        static Job COMMA = Job
-                .builder().accentColor().append(',').build();
 
         private final String command;
 
@@ -319,10 +358,6 @@ public class Terminal {
 
             public Builder closeParenthesis() {
                 return append(CLOSE_PARENTHESIS);
-            }
-
-            public Builder comma() {
-                return append(COMMA);
             }
 
             public Builder lineSeparator() {
