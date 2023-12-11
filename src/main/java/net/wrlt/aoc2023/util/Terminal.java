@@ -39,10 +39,8 @@ public class Terminal {
     }
 
     public Terminal print(int[][] matrix, IntPredicate highlightRow, IntPredicate highlightCol) {
-        var maxDigits = Arrays.stream(matrix)
-                .flatMapToInt(row -> Arrays.stream(row))
-                .map(Terminal::digits)
-                .reduce(0, Integer::max);
+        var maxDigits = Arrays.stream(matrix).flatMapToInt(Arrays::stream)
+                .map(Terminal::digits).reduce(0, Integer::max);
         var max = digits(matrix.length - 1);
         for (int i = 0; i < matrix.length; i++) {
             printf("%s: ", leftPad(Integer.toString(i), max));
@@ -115,8 +113,7 @@ public class Terminal {
     }
 
     public Terminal print(long[][] matrix, IntPredicate highlightRow, IntPredicate highlightCol) {
-        var maxDigits = Arrays.stream(matrix)
-                .flatMapToLong(row -> Arrays.stream(row))
+        var maxDigits = Arrays.stream(matrix).flatMapToLong(Arrays::stream)
                 .mapToInt(Terminal::digits)
                 .reduce(0, Integer::max);
         var max = digits(matrix.length - 1);
@@ -156,10 +153,8 @@ public class Terminal {
     }
 
     public <T> Terminal print(T[][] matrix, IntPredicate highlightRow, IntPredicate highlightCol) {
-        var max = Arrays.stream(matrix)
-                .flatMap(row -> Arrays.stream(row))
-                .map(value -> Objects.toString(value))
-                .mapToInt(String::length)
+        var max = Arrays.stream(matrix).flatMap(Arrays::stream)
+                .map(Objects::toString).mapToInt(String::length)
                 .reduce(0, Integer::max);
         var maxRowDigits = digits(matrix.length - 1);
         for (int i = 0; i < matrix.length; i++) {
@@ -175,8 +170,7 @@ public class Terminal {
 
     public <T> Terminal print(T[] array, IntPredicate highlightCol) {
         var max = Arrays.stream(array)
-                .map(value -> Objects.toString(value))
-                .mapToInt(String::length)
+                .map(Objects::toString).mapToInt(String::length)
                 .reduce(0, Integer::max);
         return print(array, max, false, highlightCol);
     }
@@ -200,29 +194,30 @@ public class Terminal {
             boolean highlightRow,
             IntPredicate highlightCol) {
         var builder = Job.builder();
-        builder.openParenthesis();
+        builder.accentColor().append('[').turnOffAttributes();
         for (int i = start; i < end; i++) {
-            if (highlightRow || highlightCol.test(i)) {
+            var hc = highlightCol.test(i);
+            if (highlightRow || hc) {
                 builder.highlightBackground().highlightColor();
             } else {
                 builder.defaultColor();
             }
             var value = fn.apply(i);
             builder.append(value);
-            if (highlightRow || highlightCol.test(i)) {
+            if (highlightRow || hc) {
                 builder.turnOffAttributes();
                 if (highlightRow) {
                     builder.highlightBackground().highlightColor();
                 }
             }
             if (i < end - 1) {
-                builder.accentColor().append(separator);
+                builder.accentColor().append(separator).turnOffAttributes();
             }
         }
         if (highlightRow) {
             builder.turnOffAttributes();
         }
-        builder.closeParenthesis().lineSeparator();
+        builder.accentColor().append(']').turnOffAttributes().lineSeparator();
         execute(builder.build());
         return this;
     }
@@ -238,9 +233,6 @@ public class Terminal {
 
     private Terminal execute(Job job) {
         output.print(job.toString());
-        if (job.isTurnOffAttributes()) {
-            output.print(Job.TURNOFF_ATTRIBUTES.toString());
-        }
         return this;
     }
 
@@ -272,7 +264,7 @@ public class Terminal {
 
         static Job CURSOR_HOME = new Job(ESC + "[H");
 
-        static Job TURNOFF_ATTRIBUTES = new Job(ESC + "[m");
+        static Job TURNOFF_ATTRIBUTES = new Job(ESC + "[0m");
 
         static Job HIGHLIGHT_COLOR = color(0x99, 0xFF, 0x99);
 
@@ -282,18 +274,10 @@ public class Terminal {
 
         static Job HIGHLIGHT_BACKGROUND = background(0x05, 0x05, 0x05);
 
-        static Job OPEN_PARENTHESIS = Job
-                .builder().accentColor().append('[').build();
-
-        static Job CLOSE_PARENTHESIS = Job
-                .builder().accentColor().append(']').build();
-
         private final String command;
 
-        private final boolean turnOffAttributes;
-
         Job(String command) {
-            this(command, false);
+            this.command = command;
         }
 
         @Override
@@ -301,38 +285,26 @@ public class Terminal {
             return command;
         }
 
-        Job(String command, boolean turnOffAttributes) {
-            this.command = command;
-            this.turnOffAttributes = turnOffAttributes;
-        }
-
-        public boolean isTurnOffAttributes() {
-            return turnOffAttributes;
-        }
-
         public static Builder builder() {
             return new Builder();
         }
 
         public static Job color(int r, int g, int b) {
-            return new Job(ESC + "[38;2;" + r + ";" + g + ";" + b + "m", true);
+            return new Job(ESC + "[38;2;" + r + ";" + g + ";" + b + "m");
         }
 
         public static Job background(int r, int g, int b) {
-            return new Job(ESC + "[48;2;" + r + ";" + g + ";" + b + "m", true);
+            return new Job(ESC + "[48;2;" + r + ";" + g + ";" + b + "m");
         }
 
         static class Builder {
-            private boolean turnOffAttributes;
-
             private final StringBuilder buffer = new StringBuilder();
 
             public Job build() {
-                return new Job(buffer.toString(), turnOffAttributes);
+                return new Job(buffer.toString());
             }
 
             public Builder turnOffAttributes() {
-                turnOffAttributes = false;
                 return append(TURNOFF_ATTRIBUTES);
             }
 
@@ -352,20 +324,11 @@ public class Terminal {
                 return append(HIGHLIGHT_BACKGROUND);
             }
 
-            public Builder openParenthesis() {
-                return append(OPEN_PARENTHESIS);
-            }
-
-            public Builder closeParenthesis() {
-                return append(CLOSE_PARENTHESIS);
-            }
-
             public Builder lineSeparator() {
                 return append(System.lineSeparator());
             }
 
             public Builder append(Job job) {
-                turnOffAttributes |= job.isTurnOffAttributes();
                 return append(job.toString());
             }
 
