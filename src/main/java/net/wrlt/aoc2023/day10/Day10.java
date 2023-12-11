@@ -351,17 +351,6 @@ public class Day10 {
         return new int[] { r, c, v };
     }
 
-    private static Character[][] copy(char[][] matrix) {
-        var copy = new Character[matrix.length][];
-        for (int i = 0; i < matrix.length; i++) {
-            copy[i] = new Character[matrix[i].length];
-            for (int j = 0; j < matrix[i].length; j++) {
-                copy[i][j] = matrix[i][j];
-            }
-        }
-        return copy;
-    }
-
     private static Stream<String> parse(Path input) throws IOException {
         return Files.lines(input);
     }
