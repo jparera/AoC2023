@@ -19,7 +19,8 @@ public class Day12 {
                     var groups = Strings.numbers(parts[1]).map(Integer::valueOf).toList();
                     return new Record(springs, groups);
                 }).toList();
-                return records.stream().mapToLong(Day12::arrangements).sum();
+                return records.stream().parallel()
+                        .mapToLong(Day12::arrangements).sum();
             }
         }
 
@@ -40,7 +41,8 @@ public class Day12 {
                     }
                     return new Record(springs, list);
                 }).toList();
-                return records.stream().mapToLong(Day12::arrangements).sum();
+                return records.stream().parallel()
+                        .mapToLong(Day12::arrangements).sum();
             }
         }
     }
