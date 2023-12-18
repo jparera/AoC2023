@@ -12,7 +12,6 @@ import net.wrlt.aoc2023.util.Strings;
 
 public class Day15 {
     public static class Part1 {
-
         public static int execute(Path input) throws IOException {
             try (var steps = parse(input)) {
                 return steps.mapToInt(Day15::hash).sum();
