@@ -2,6 +2,8 @@ package net.wrlt.aoc2023.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 public class Ranges {
     public static class OfInt {
@@ -12,8 +14,12 @@ public class Ranges {
                 }
             }
 
-            public long length() {
+            public int length() {
                 return Math.subtractExact(end, start);
+            }
+
+            public IntStream stream() {
+                return IntStream.range(start, end);
             }
 
             public Range intersect(Range r) {
@@ -87,6 +93,10 @@ public class Ranges {
 
             public long length() {
                 return Math.subtractExact(end, start);
+            }
+
+            public LongStream stream() {
+                return LongStream.range(start, end);
             }
 
             public Range intersect(Range r) {
