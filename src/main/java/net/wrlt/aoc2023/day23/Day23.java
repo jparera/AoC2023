@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 public class Day23 {
@@ -24,46 +23,61 @@ public class Day23 {
                 var start = new Point(0, 1);
                 var end = new Point(n - 1, n - 2);
 
+                var visited = new HashMap<Point, Distance>();
                 var stack = new ArrayDeque<Distance>();
                 stack.push(new Distance(start, 0));
 
-                var path = new ArrayList<Point>();
-                int max = -1;
+                int max = Integer.MIN_VALUE;
                 while (!stack.isEmpty()) {
-                    var current = stack.poll();
+                    var current = stack.peek();
                     var point = current.point();
-                    path.subList(current.distance(), path.size()).clear();
                     if (end.equals(point)) {
-                        max = Math.max(max, path.size());
+                        stack.poll();
+                        max = Math.max(max, current.distance());
                         continue;
                     }
-                    if (path.contains(point)) {
+                    var d = visited.get(point);
+                    if (d != null) {
+                        if (d == current) {
+                            visited.remove(point);
+                        }
+                        stack.pop();
                         continue;
                     }
-                    path.add(point);
+                    visited.put(point, current);
                     switch (map[point.row()][point.col()]) {
                         case '>':
-                            move(stack, map, current, E);
+                            push(stack, map, current, E);
                             break;
                         case '<':
-                            move(stack, map, current, W);
+                            push(stack, map, current, W);
                             break;
                         case '^':
-                            move(stack, map, current, N);
+                            push(stack, map, current, N);
                             break;
                         case 'v':
-                            move(stack, map, current, S);
+                            push(stack, map, current, S);
                             break;
                         case '.':
-                            move(stack, map, current, N);
-                            move(stack, map, current, S);
-                            move(stack, map, current, W);
-                            move(stack, map, current, E);
+                            push(stack, map, current, N);
+                            push(stack, map, current, S);
+                            push(stack, map, current, W);
+                            push(stack, map, current, E);
                             break;
                     }
                 }
                 return max;
             }
+        }
+
+        private static void push(Deque<Distance> stack, char[][] map, Distance from, int[] offset) {
+            var n = map.length;
+            var nr = from.point().row() + offset[0];
+            var nc = from.point().col() + offset[1];
+            if (nr < 0 || nr >= n || nc < 0 || nc >= n || map[nr][nc] == '#') {
+                return;
+            }
+            stack.push(new Distance(new Point(nr, nc), from.distance() + 1));
         }
     }
 
@@ -87,47 +101,60 @@ public class Day23 {
                 vertices.add(end);
                 vertices.addAll(joins);
 
-                var distances = new HashMap<Point, List<Distance>>();
+                var distances = new int[n][n][][];
                 for (var v : vertices) {
-                    var distance = new ArrayList<Distance>();
-                    var visited = new HashSet<Point>();
-                    var queue = new ArrayDeque<Distance>();
-                    queue.push(new Distance(v, 0));
+                    var distance = new ArrayList<int[]>();
+                    var visited = new boolean[n][n];
+                    var queue = new ArrayDeque<int[]>();
+                    queue.push(new int[] { v.row(), v.col(), 0 });
                     while (!queue.isEmpty()) {
                         var current = queue.pop();
-                        var p = current.point();
-                        if (visited.contains(p)) {
+                        var r = current[0];
+                        var c = current[1];
+                        var d = current[2];
+
+                        if (visited[r][c]) {
                             continue;
                         }
-                        visited.add(p);
+                        visited[r][c] = true;
+
+                        var p = new Point(r, c);
                         if (vertices.contains(p) && !v.equals(p)) {
-                            distance.add(current);
+                            distance.add(new int[] { r, c, d });
                             continue;
                         }
                         for (var neighbor : graph.get(p)) {
-                            queue.push(new Distance(neighbor, current.distance() + 1));
+                            var nr = neighbor.row();
+                            var nc = neighbor.col();
+                            queue.push(new int[] { nr, nc, d + 1 });
                         }
                     }
-                    distances.put(v, distance);
+                    distances[v.row()][v.col()] = distance.stream().toArray(int[][]::new);
                 }
-                return dfs(start, end, distances, new HashSet<Point>());
+                var max = new int[1];
+                new DFS(end.row(), end.col(), max, distances, new boolean[n][n]).execute(start.row(), start.col(), 0);
+                return max[0];
             }
         }
 
-        private static int dfs(Point node, Point end, Map<Point, List<Distance>> distances, Set<Point> visited) {
-            if (node.equals(end)) {
-                return 0;
+        private record DFS(int er, int ec, int[] max, int[][][][] distances, boolean[][] visited) {
+            private void execute(int r, int c, int d) {
+                if (er == r && ec == c) {
+                    max[0] = Math.max(max[0], d);
+                    return;
+                }
+                if (visited[r][c]) {
+                    return;
+                }
+                visited[r][c] = true;
+                for (var neighbor : distances[r][c]) {
+                    var nr = neighbor[0];
+                    var nc = neighbor[1];
+                    var nd = neighbor[2];
+                    execute(nr, nc, d + nd);
+                }
+                visited[r][c] = false;
             }
-            if (visited.contains(node)) {
-                return Integer.MIN_VALUE;
-            }
-            visited.add(node);
-            int max = Integer.MIN_VALUE;
-            for (var d : distances.get(node)) {
-                max = Math.max(max, dfs(d.point(), end, distances, visited) + d.distance());
-            }
-            visited.remove(node);
-            return max;
         }
 
         private static Map<Point, List<Point>> graph(char[][] map) {
@@ -161,16 +188,6 @@ public class Day23 {
     private static final int[] W = { 0, -1 };
 
     private static final int[][] OFFSETS = { N, S, E, W };
-
-    private static void move(Deque<Distance> stack, char[][] map, Distance from, int[] offset) {
-        var n = map.length;
-        var nr = from.point().row() + offset[0];
-        var nc = from.point().col() + offset[1];
-        if (nr < 0 || nr >= n || nc < 0 || nc >= n || map[nr][nc] == '#') {
-            return;
-        }
-        stack.push(new Distance(new Point(nr, nc), from.distance() + 1));
-    }
 
     record Distance(Point point, int distance) {
     }
