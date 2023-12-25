@@ -7,7 +7,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -96,13 +95,16 @@ public class Day23 {
                         .filter(e -> e.getValue().size() > 2)
                         .map(Map.Entry::getKey)
                         .toList();
-                var vertices = new HashSet<Point>();
-                vertices.add(start);
-                vertices.add(end);
-                vertices.addAll(joins);
 
-                var distances = new int[n][n][][];
-                for (var v : vertices) {
+                var vertices = new HashMap<Point, Integer>();
+                vertices.put(start, vertices.size());
+                for (var join : joins) {
+                    vertices.put(join, vertices.size());
+                }
+                vertices.put(end, vertices.size());
+
+                var distances = new int[vertices.size()][][];
+                for (var v : vertices.keySet()) {
                     var distance = new ArrayList<int[]>();
                     var visited = new boolean[n][n];
                     var queue = new ArrayDeque<int[]>();
@@ -119,8 +121,8 @@ public class Day23 {
                         visited[r][c] = true;
 
                         var p = new Point(r, c);
-                        if (vertices.contains(p) && !v.equals(p)) {
-                            distance.add(new int[] { r, c, d });
+                        if (vertices.containsKey(p) && !v.equals(p)) {
+                            distance.add(new int[] { vertices.get(p), d });
                             continue;
                         }
                         for (var neighbor : graph.get(p)) {
@@ -129,31 +131,29 @@ public class Day23 {
                             queue.push(new int[] { nr, nc, d + 1 });
                         }
                     }
-                    distances[v.row()][v.col()] = distance.stream().toArray(int[][]::new);
+                    distances[vertices.get(v)] = distance.stream().toArray(int[][]::new);
                 }
                 var max = new int[1];
-                new DFS(end.row(), end.col(), max, distances, new boolean[n][n]).execute(start.row(), start.col(), 0);
+                new DFS(vertices.size() - 1, max, distances).execute(0, 0, 0);
                 return max[0];
             }
         }
 
-        private record DFS(int er, int ec, int[] max, int[][][][] distances, boolean[][] visited) {
-            private void execute(int r, int c, int d) {
-                if (er == r && ec == c) {
+        private record DFS(int end, int[] max, int[][][] distances) {
+            private void execute(int i, int d, long visited) {
+                if (end == i) {
                     max[0] = Math.max(max[0], d);
                     return;
                 }
-                if (visited[r][c]) {
+                long mask = 1L << i;
+                if ((visited & mask) != 0) {
                     return;
                 }
-                visited[r][c] = true;
-                for (var neighbor : distances[r][c]) {
-                    var nr = neighbor[0];
-                    var nc = neighbor[1];
-                    var nd = neighbor[2];
-                    execute(nr, nc, d + nd);
+                visited |= mask;
+                for (var neighbor : distances[i]) {
+                    execute(neighbor[0], d + neighbor[1], visited);
                 }
-                visited[r][c] = false;
+                visited ^= mask;
             }
         }
 
