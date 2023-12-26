@@ -15,12 +15,12 @@ class DayTest {
         return Tests.toPath(this.getClass(), "input.txt");
     }
 
+    Path example1() {
+        return Tests.toPath(this.getClass(), "example1.txt");
+    }
+
     @Nested
     class Part1Test {
-        Path example1() {
-            return Tests.toPath(this.getClass(), "example1.txt");
-        }
-
         @Test
         @Disabled
         void passesExample() throws Exception {
@@ -38,14 +38,10 @@ class DayTest {
 
     @Nested
     class Part2Test {
-        Path example2() {
-            return Tests.toPath(this.getClass(), "example2.txt");
-        }
-
         @Test
         @Disabled
         void passesExample() throws Exception {
-            var output = Day.Part2.execute(example2());
+            var output = Day.Part2.execute(example1());
             assertEquals(-1, output);
         }
 
