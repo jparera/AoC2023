@@ -51,7 +51,20 @@ public class Day24 {
                 var py = (long) Math.rint(matrix[1][6]);
                 var pz = (long) Math.rint(matrix[2][6]);
 
-                return px + py + pz;
+                var vx = (long) Math.rint(matrix[3][6]);
+                var vy = (long) Math.rint(matrix[4][6]);
+                var vz = (long) Math.rint(matrix[5][6]);
+
+                var rock = HailStone.valueOf(String.format("%d, %d, %d @ %d, %d, %d", px, py, pz, vx, vy, vz));
+                var collisions = 0;
+                for (var stone : stones) {
+                    var intersection = rock.willCross(stone);
+                    if (intersection != null && intersection.isCollision()) {
+                        collisions++;
+                    }
+                }
+
+                return collisions == stones.size() ? px + py + pz : -1;
             }
         }
 
@@ -111,19 +124,17 @@ public class Day24 {
         }
     }
 
+    private static final double EPSILON = 1e-6;
+
     private record HailStone(Position p, Vector v, Vector a, Vector b) {
-
-        private static final Double EPSILON = 0.000001;
-
-        @SuppressWarnings("unused")
         public Intersection willCross(HailStone o) {
             if (!a.crossProduct(o.a).isZero()) {
                 var xy = (o.b.y() - b.y()) / (a.y() - o.a.y());
                 var xz = (o.b.z() - b.z()) / (a.z() - o.a.z());
-                if (Math.abs(xy - xz) <= EPSILON) {
+                if (isEqual(xy, xz)) {
                     var t1 = (xy - p.x()) / v.x();
                     var t2 = (xy - o.p.x()) / o.v.x();
-                    if (t1 >= 0 && t2 >= 0) {
+                    if (t1 > 0 && t2 > 0) {
                         var y = a.y() * xy + b.y();
                         var z = a.z() * xy + b.z();
                         return new Intersection(new Position(xy, y, z), t1, t2);
@@ -138,7 +149,7 @@ public class Day24 {
                 var x = (o.b.y() - b.y()) / (a.y() - o.a.y());
                 var t1 = (x - p.x()) / v.x();
                 var t2 = (x - o.p.x()) / o.v.x();
-                if (t1 >= 0 && t2 >= 0) {
+                if (t1 > 0 && t2 > 0) {
                     var y = a.y() * x + b.y();
                     return new Intersection(new Position(x, y, 0), t1, t2);
                 }
@@ -173,13 +184,13 @@ public class Day24 {
     }
 
     private record Intersection(Position p, double t1, double t2) {
-        @SuppressWarnings("unused")
         public boolean isCollision() {
-            return t1 == t2;
+            return isEqual(t1, t2);
         }
     }
 
     private record Position(double x, double y, double z) {
+
     }
 
     private record Vector(double x, double y, double z) {
@@ -191,8 +202,17 @@ public class Day24 {
         }
 
         public boolean isZero() {
-            return x == 0 && y == 0 && z == 0;
+            return isEqualZero(x) && isEqualZero(y) && isEqualZero(z);
         }
+    }
+
+    private static boolean isEqual(double v1, double v2) {
+        var epsilon = EPSILON * Math.max(Math.abs(v1), Math.abs(v2));
+        return Math.abs(v1 - v2) <= epsilon;
+    }
+
+    private static boolean isEqualZero(double value) {
+        return Math.abs(value) <= EPSILON;
     }
 
     private static Stream<String> parse(Path input) throws IOException {
