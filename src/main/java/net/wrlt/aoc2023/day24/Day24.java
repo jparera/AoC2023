@@ -124,11 +124,11 @@ public class Day24 {
         }
     }
 
-    private static final double EPSILON = 1e-6;
+    private static final double EPSILON = Float.intBitsToFloat(Float.floatToIntBits(1) + 1) - 1;
 
     private record HailStone(Position p, Vector v, Vector a, Vector b) {
         public Intersection willCross(HailStone o) {
-            if (!a.crossProduct(o.a).isZero()) {
+            if (!v.crossProduct(o.v).isZero()) {
                 var xy = (o.b.y() - b.y()) / (a.y() - o.a.y());
                 var xz = (o.b.z() - b.z()) / (a.z() - o.a.z());
                 if (isEqual(xy, xz)) {
@@ -207,6 +207,9 @@ public class Day24 {
     }
 
     private static boolean isEqual(double v1, double v2) {
+        if (Math.abs(v1 - v2) <= EPSILON) {
+            return true;
+        }
         var epsilon = EPSILON * Math.max(Math.abs(v1), Math.abs(v2));
         return Math.abs(v1 - v2) <= epsilon;
     }
